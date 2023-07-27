@@ -1,2 +1,3 @@
 # denovoPromoters
-![denovologo](https://github.com/flemingtonlab/denovoPromoters/assets/23278950/4dcc5ac0-8037-46ce-85b0-e3e35140659e)
+![Picture1](https://github.com/flemingtonlab/denovoPromoters/assets/23278950/322c08f5-df7f-4475-aad2-a0daf5bcea90)
+
