@@ -11,9 +11,10 @@ import glob
 
 # Plot created July 7, 2023
 # Any de novo site that had overlap with a blacklisted region (encode) was removed (using the -5000 to +5000 region)
+
 bed_path = '/Users/nate/dnovo/beds/denovo_promoters/de_novo_promoters_Akata_BCR_plus_Mutu_Zta.noblacklist.bed'
 
-mutu_ctl_str1_paths = ['/Volumes/de_novo/ATAC/Mutu_ATAC/occ/' + f'MC{i}_ATAC.oc c.bw' for i in [2,4,5]]
+mutu_ctl_str1_paths = ['/Volumes/de_novo/ATAC/Mutu_ATAC/occ/' + f'MC{i}_ATAC.occ.bw' for i in [2,4,5]]
 mutu_zta_str1_paths = ['/Volumes/de_novo/ATAC/Mutu_ATAC/occ/' + f'MZ{i}_ATAC.occ.bw' for i in [1,2,4]]
 
 akata_uninduced_str1_paths = ['/Volumes/de_novo/ATAC/Akata_ATAC/occ/' + f'deduplicated_Akata-C{i}_hg38plusAkataInverted_ATAC.occ.bw' for i in range(1,7)]
@@ -58,7 +59,7 @@ def extract_coverage(strand1_paths, regions):
     return m / len(strand1_paths)
 
 
-zta_vpic_df = pd.read_table('/Users/nate/Downloads/motifs_in_de_novo_promoters/4_vPIC_plus_Zta/4_TATTAAA_TATTTAA_and_Zta_ChIP_seq_Hammerschmidt/TATTAAA_plus_TATTTAA_and_Zta_ChIP_Hammerschmidt_output/de_novo_promoters_Akata_BCR_plus_Mutu_Zta.bed_TATTAAA_plus_TATTTAA.bed.binary_motif_info.bed_Raji_Zta_ChIP_induced_pooledReps_summits.bed.no_EBV_plus_strand.bed.binary_motif_info.tsv', index_col=0)
+zta_vpic_df = pd.read_table('/Users/nate/Downloads/de_novo_promoter_paper/motifs_in_de_novo_promoters/4_vPIC_plus_Zta/4_TATTAAA_TATTTAA_and_Zta_ChIP_seq_Hammerschmidt/TATTAAA_plus_TATTTAA_and_Zta_ChIP_Hammerschmidt_output/de_novo_promoters_Akata_BCR_plus_Mutu_Zta.bed_TATTAAA_plus_TATTTAA.bed.binary_motif_info.bed_Raji_Zta_ChIP_induced_pooledReps_summits.bed.no_EBV_plus_strand.bed.binary_motif_info.tsv', index_col=0)
 zta_vpic_df = zta_vpic_df.set_index('DN prom name')
 zta = zta_vpic_df[zta_vpic_df['Zta_ChIP_Hammerschmidt'] == 1]
 zta = set(zta.index)
@@ -85,12 +86,10 @@ with open(working_dir + 'de_novo_tss_200bp_upstream.allsites.fa') as infile:
         else:
             fa200_0[keya]= line
 
-
 rta_motif_fw = "G[ACTG]CC[ACGT]{8,10}GG[ACGT]G" 
 rta_motif_rev= "C[ACGT]CC[ACGT]{8,10}GG[ACGT]C"
 rta_prog = re.compile(f'{rta_motif_fw}|{rta_motif_rev}')
 rta_regions = [i for i in regions if rta_prog.search(fa200_0[i[3]]) is not None]
-
 
 vpic_regions = [i for i in regions if bcrf1_prog.search(fa40_25[i[3]]) is not None]
 all_three = rta_regions+zta_regions+vpic_regions
@@ -103,12 +102,10 @@ for i in all_three:
         two_plus_sites.append(i)
     l.append(i)
 
-
-no_site = [i for i in regions if i[3] not in all_three and 'chrY' not in i[0]]
-
-vpic_regions = [i for i in vpic_regions if i not in two_plus_sites and 'chrY' not in i[0]]
-zta_regions = [i for i in zta_regions if i not in two_plus_sites and 'chrY' not in i[0]]
-rta_regions = [i for i in rta_regions if i not in two_plus_sites and 'chrY' not in i[0]]
+no_site = [i for i in regions if i[3] not in all_three]
+vpic_regions = [i for i in vpic_regions if i[3] not in two_plus_sites]
+zta_regions = [i for i in zta_regions if i[3] not in two_plus_sites]
+rta_regions = [i for i in rta_regions if i[3] not in two_plus_sites]
 
 for reg, reg_name in zip([rta_regions, zta_regions, vpic_regions, no_site], ["rta", "zta", "vpic", "none"]):
         
@@ -120,6 +117,8 @@ for reg, reg_name in zip([rta_regions, zta_regions, vpic_regions, no_site], ["rt
     for i,j in zip(all_matrices, ["mut_c", "mut_z"]):
         fig = plt.figure(figsize=(3, height))
         plt.imshow(i, cmap='Greys',aspect='auto', interpolation="gaussian", vmax=.03)
+        plt.colorbar()
+
         plt.xticks([length//2])
         plt.yticks([])
         plt.savefig(j + f'_denovo_noblacklist_atac_mutu_OCCUPANCY_{length}.{reg_name}.svg')
@@ -143,8 +142,6 @@ for reg, reg_name in zip([rta_regions, zta_regions, vpic_regions, no_site], ["rt
 
 
 
-
-
 for reg, reg_name in zip([rta_regions, zta_regions, vpic_regions, no_site], ["rta", "zta", "vpic", "none"]):
         
     mutu_ctl_coverage = extract_coverage(mutu_ctl_str1_paths, regions=reg)
@@ -159,7 +156,7 @@ for reg, reg_name in zip([rta_regions, zta_regions, vpic_regions, no_site], ["rt
     plt.fill_between(range(3000,7000), muzta_normed[3000:7000], alpha=.3)    
     plt.xticks([5000])
     plt.xlim([3000,7000])
-    plt.ylim([0.95*np.min([np.min(muctl_normed[3000:7000]), np.min(muzta_normed[3000:7000])]), 0.25])
+    plt.ylim([0.95*np.min([np.min(muctl_normed[3000:7000]), np.min(muzta_normed[3000:7000])]), 0.040])
     plt.yticks([])
     plt.axvline([5000],c='k')
     plt.savefig(f'mutu_summation_curve_atac_noblacklist_occupancy{length}.{reg_name}.svg')
@@ -184,42 +181,3 @@ for reg, reg_name in zip([rta_regions, zta_regions, vpic_regions, no_site], ["rt
     plt.axvline([5000],c='k')
     plt.savefig(f'akata_summation_curve_atac_noblacklist_{length}.{reg_name}.svg')
     plt.close('all')
-
-
-
-mutu_ctl_6h_str1_paths = ['/Volumes/de_novo/ATAC/Mutu_6h_ATAC/bams/MC6.primary.footprints.bw']
-mutu_zta_6h_str1_paths = ['/Volumes/de_novo/ATAC/Mutu_6h_ATAC/bams/MZ6.primary.footprints.bw']
-
-
-mutu_ctl_12h_str1_paths = ['/Volumes/de_novo/ATAC/Mutu_12h_ATAC/bams/MC12.primary.footprints.bw']
-mutu_zta_12h_str1_paths = ['/Volumes/de_novo/ATAC/Mutu_12h_ATAC/bams/MZ12.primary.footprints.bw']
-
-
-for reg, reg_name in zip([rta_regions, zta_regions, vpic_regions, no_site], ["rta", "zta", "vpic", "none"]):
-        
-    mutu_ctl_coverage = extract_coverage(mutu_ctl_6h_str1_paths, regions=reg)
-    mutu_zta_coverage = extract_coverage(mutu_zta_6h_str1_paths, regions=reg)
-    height = 8 * (len(reg) / 12000)
-    all_matrices = [mutu_ctl_coverage, mutu_zta_coverage]
-    for i,j in zip(all_matrices, ["mutu6h_ctl_", "mutu6h_zta"]):
-        fig = plt.figure(figsize=(3, height))
-        plt.imshow(i, cmap='Reds',aspect='auto', interpolation="gaussian", vmax=.7)
-        plt.xticks([length//2])
-        plt.yticks([])
-        plt.savefig(j + f'_denovo_noblacklist_atac_mutu_6h_{length}.{reg_name}.svg')
-        plt.close('all')
-
-
-for reg, reg_name in zip([rta_regions, zta_regions, vpic_regions, no_site], ["rta", "zta", "vpic", "none"]):
-        
-    mutu_ctl_coverage = extract_coverage(mutu_ctl_12h_str1_paths, regions=reg)
-    mutu_zta_coverage = extract_coverage(mutu_zta_12h_str1_paths, regions=reg)
-    height = 8 * (len(reg) / 12000)
-    all_matrices = [mutu_ctl_coverage, mutu_zta_coverage]
-    for i,j in zip(all_matrices, ["mutu12h_ctl_", "mutu12h_zta"]):
-        fig = plt.figure(figsize=(3, height))
-        plt.imshow(i, cmap='Reds',aspect='auto', interpolation="gaussian", vmax=.7)
-        plt.xticks([length//2])
-        plt.yticks([])
-        plt.savefig(j + f'_denovo_noblacklist_atac_mutu_12h_{length}.{reg_name}.svg')
-        plt.close('all')

@@ -1,4 +1,3 @@
-
 import sys
 import numpy as np
 import pyBigWig
@@ -9,12 +8,14 @@ import random
 import glob
 import re
 
-# Plot created May 17, 2023, revised Dec 22, 2023
+# Plot created May 17, 2023
 # Any de novo site that had overlap with a blacklisted region (encode) was removed (using the -5000 to +5000 region)
 
 bed_path = '/Users/nate/dnovo/beds/denovo_promoters/de_novo_promoters_Akata_BCR_plus_Mutu_Zta.noblacklist.bed'
-H3K4ME3_str1_paths = ['/Volumes/de_novo/ChIP/Akata/bigwigs/H3K4M3Lat.bw']
-H3K4ME3_REAC_str1_paths = ['/Volumes/de_novo/ChIP/Akata/bigwigs/H3K4M3Reac.bw']
+
+basedir = '/Volumes/de_novo/Bisulfite/Akata/coverage/'
+uninduced_paths = [basedir + f'{i}.{i}_1_bismark_bt2_pe.deduplicated.bismark.cov.bg.noEBV.bg.bw'  for i in ['C1','C2','C3','C4']]
+induced_paths = [basedir + f'{i}.{i}_1_bismark_bt2_pe.deduplicated.bismark.cov.bg.noEBV.bg.bw'  for i in ['Ig1','Ig2','Ig3','Ig4']]
 
 
 upstream_bases = 5000
@@ -23,10 +24,10 @@ length = upstream_bases + downstream_bases
 
 
 def extract_coverage(strand1_paths, regions):
+    m = np.zeros([len(regions), length])
     
     for str1_path in strand1_paths:
         str1 = pyBigWig.open(str1_path)
-        m = np.zeros([len(regions), length])
         for ind, region in enumerate(regions):
             start = int(float(region[1]))
             stop = int(float(region[2])) 
@@ -40,7 +41,7 @@ def extract_coverage(strand1_paths, regions):
             stop = middle + downstream_bases
             vals = str1.values(region[0], start, stop)
             vals = np.abs(vals)
-            vals = np.nan_to_num(np.array(vals), nan=0)
+            #vals = np.nan_to_num(np.array(vals), nan=0)
             if strand == '-':
                 vals = np.flip(vals)
             
@@ -48,14 +49,6 @@ def extract_coverage(strand1_paths, regions):
         print(str1_path, "done")
     return m / len(strand1_paths)
 
-def get_row_cov_max(matrices_list, min_divisor=1):
-    rows = matrices_list[0].shape[0]
-    number_of_matrices = len(matrices_list)
-    maxes = np.zeros([rows, number_of_matrices + 1])
-    for col, matr in enumerate(matrices_list):
-        maxes[:, col] = np.max(matr, 1)
-    maxes[number_of_matrices] = min_divisor
-    return np.max(maxes, 1)
 
 
 def import_bed(path, col_sort=4):
@@ -155,44 +148,75 @@ def get_sites(denovo_regions):
 
     return rta, zta, vpic, no_site
 
+
+def bin(array_2d, bin_size):
+    l = []
+    for i in range(0, len(array_2d), bin_size):
+        l.append(np.mean(array_2d[i:i+bin_size]))
+    return l
+    
+
+
 denovo_regions = import_bed(bed_path)
 rta, zta, vpic, no_site = get_sites(denovo_regions)
 
+canonical_bed_path = '/Users/nate/TSS_from_akata_uninduced.bed'
+canonical = import_bed(canonical_bed_path, col_sort=6)
 
-for reg, reg_name in zip([rta, zta, vpic, no_site], ["rta", "zta", "vpic", "none"]):      
-    h3k4me3_coverage = extract_coverage(H3K4ME3_str1_paths, regions=reg)
-    h3k4me3_reac_coverage = extract_coverage(H3K4ME3_REAC_str1_paths, regions=reg)
-    height = 8 * (len(reg) / 12000)
-    all_matrices = [h3k4me3_coverage, h3k4me3_reac_coverage]
-    for i,j in zip(all_matrices, ["h3k4me3", 'h3k4me3_react']): 
-        fig = plt.figure(figsize=(3, height))
-        plt.imshow(i, cmap='Purples',aspect='auto', interpolation="gaussian", vmax=100)
-        plt.colorbar()
-        plt.xticks([length//2])
-        plt.yticks([])
-        plt.savefig(j + f'_denovo_histonecov_{length}.{reg_name}.vmax100.svg')
-        plt.close('all')
+tpm0 = [i for i in canonical if float(i[6])==0]
+tpm3 = [i for i in canonical if float(i[6])>=3]
+
+binsize = 10
+xs = [i + binsize/2 for i in range(-upstream_bases, downstream_bases, binsize)]
 
 
-for reg, reg_name in zip([rta, zta, vpic, no_site], ["rta", "zta", "vpic", "none"]):
-        
-    h3k4me3_coverage = extract_coverage(H3K4ME3_str1_paths, regions=reg)
-    h3k4me3_reac_coverage = extract_coverage(H3K4ME3_REAC_str1_paths, regions=reg)
-    fig = plt.figure()
-    ctl_normed = np.sum(h3k4me3_coverage, 0) / len(reg)
-    induced_normed = np.sum(h3k4me3_reac_coverage, 0) / len(reg)
-    plt.plot(range(3000,7000), ctl_normed[3000:7000])
-    plt.fill_between(range(3000,7000), ctl_normed[3000:7000], alpha=.3)
-    plt.plot(range(3000,7000), induced_normed[3000:7000])
-    plt.fill_between(range(3000,7000), induced_normed[3000:7000], alpha=.3)    
-    plt.xticks([5000])
-    plt.xlim([3000,7000])
-    plt.ylim([0.95*np.min([np.min(ctl_normed[3000:7000]), np.min(induced_normed[3000:7000])]), 80])
-    plt.yticks([])
-    plt.axvline([5000],c='k')
-    plt.savefig(f'akata_summation_curve_h3k4me3{length}.{reg_name}.svg')
-    plt.close('all')
+zta_methyl = bin(np.nanmean(extract_coverage(uninduced_paths, regions=zta), 0), binsize)
+rta_methyl = bin(np.nanmean(extract_coverage(uninduced_paths, regions=rta), 0), binsize)
+vpic_methyl = bin(np.nanmean(extract_coverage(uninduced_paths, regions=vpic), 0), binsize)
+no_site_methyl = bin(np.nanmean(extract_coverage(uninduced_paths, regions=no_site), 0), binsize)
+tpm0_methyl = bin(np.nanmean(extract_coverage(uninduced_paths, regions=tpm0), 0), binsize)
+tpm3_methyl = bin(np.nanmean(extract_coverage(uninduced_paths, regions=tpm3), 0), binsize)
 
 
+fig = plt.figure(figsize=(8,8))
+ax = plt.subplot()
+plt.plot(xs, tpm0_methyl)
+plt.plot(xs, tpm3_methyl)
+plt.plot(xs, zta_methyl)
+ax.set_xticks([-upstream_bases, 0, downstream_bases])
+ax.set_yticks([0,25,50,75,100])
+plt.ylim([0, 100])
+plt.xlim([-upstream_bases, downstream_bases])
+plt.axvline(0, ls='--', c='k')
+plt.savefig('tpm0_tpm3_zta.methyl.svg')
 
 
+fig = plt.figure(figsize=(8,8))
+ax = plt.subplot()
+plt.plot(xs, rta_methyl)
+ax.set_xticks([-upstream_bases, 0, downstream_bases])
+ax.set_yticks([0,25,50,75,100])
+plt.ylim([0, 100])
+plt.xlim([-upstream_bases, downstream_bases])
+plt.axvline(0, ls='--', c='k')
+plt.savefig('rta.methyl.svg')
+
+fig = plt.figure(figsize=(8,8))
+ax = plt.subplot()
+plt.plot(xs, vpic_methyl)
+ax.set_xticks([-upstream_bases, 0, downstream_bases])
+ax.set_yticks([0,25,50,75,100])
+plt.ylim([0, 100])
+plt.xlim([-upstream_bases, downstream_bases])
+plt.axvline(0, ls='--', c='k')
+plt.savefig('vpic.methyl.svg')
+
+fig = plt.figure(figsize=(8,8))
+ax = plt.subplot()
+plt.plot(xs, no_site_methyl)
+ax.set_xticks([-upstream_bases, 0, downstream_bases])
+ax.set_yticks([0,25,50,75,100])
+plt.ylim([0, 100])
+plt.xlim([-upstream_bases, downstream_bases])
+plt.axvline(0, ls='--', c='k')
+plt.savefig('no_site.methyl.svg')

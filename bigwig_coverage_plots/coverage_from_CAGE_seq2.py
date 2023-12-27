@@ -77,8 +77,8 @@ def plot_heatmap(matrix, name, colormap='Reds',height=8):
     plt.savefig(name + '.heatmap.svg')
     plt.close('all') 
 
-def plot_sumcurves(matrix1, name, color='r',cutoff_number=.0765, binsize=10, max_y=3.5):
-    matrix1[matrix1 < cutoff_number] = 0
+def plot_sumcurves(matrix1, name, color='r',cutoff_number=0, binsize=100, max_y=10):
+    matrix1[matrix1 <= cutoff_number] = 0
     matrix1[matrix1 > cutoff_number] = 1
     sums1 = np.sum(matrix1, 0)
     sum_hist1 = [0]
@@ -90,13 +90,14 @@ def plot_sumcurves(matrix1, name, color='r',cutoff_number=.0765, binsize=10, max
     plt.plot(y_vals, color=color)
     plt.fill_between(range(len(y_vals)), y_vals, y2=[np.min(y_vals)]*len(y_vals), color=color)
     plt.ylim([np.min(y_vals), max_y])
+    plt.xlim([0,len(y_vals)-1])
     plt.yticks([])
     plt.xticks([])
     print(np.max(sum_hist1[1:-1]) / np.shape(matrix1)[0],name)
     plt.savefig(name + '.summation.svg')
 
 def get_zta_sites(denovo_regions):
-    zta_vpic_df = pd.read_table('/Users/nate/Downloads/motifs_in_de_novo_promoters/4_vPIC_plus_Zta/4_TATTAAA_TATTTAA_and_Zta_ChIP_seq_Hammerschmidt/TATTAAA_plus_TATTTAA_and_Zta_ChIP_Hammerschmidt_output/de_novo_promoters_Akata_BCR_plus_Mutu_Zta.bed_TATTAAA_plus_TATTTAA.bed.binary_motif_info.bed_Raji_Zta_ChIP_induced_pooledReps_summits.bed.no_EBV_plus_strand.bed.binary_motif_info.tsv', index_col=0)
+    zta_vpic_df = pd.read_table('/Users/nate/Downloads/de_novo_promoter_paper/motifs_in_de_novo_promoters/4_vPIC_plus_Zta/4_TATTAAA_TATTTAA_and_Zta_ChIP_seq_Hammerschmidt/TATTAAA_plus_TATTTAA_and_Zta_ChIP_Hammerschmidt_output/de_novo_promoters_Akata_BCR_plus_Mutu_Zta.bed_TATTAAA_plus_TATTTAA.bed.binary_motif_info.bed_Raji_Zta_ChIP_induced_pooledReps_summits.bed.no_EBV_plus_strand.bed.binary_motif_info.tsv', index_col=0)
     zta_vpic_df = zta_vpic_df.set_index('DN prom name')
     zta = zta_vpic_df[zta_vpic_df['Zta_ChIP_Hammerschmidt'] == 1]
     zta = set(zta.index)
@@ -145,9 +146,9 @@ def get_sites(denovo_regions):
     l = []
     two_plus_sites = []
     for i in all_three:
-        if i[3] in l:
-            two_plus_sites.append(i[3])
-        l.append(i[3])
+        if i in l:
+            two_plus_sites.append(i)
+        l.append(i)
 
     no_site = [i for i in denovo_regions if i[3] not in all_three]
     vpic = [i for i in vpic if i[3] not in two_plus_sites]
@@ -156,6 +157,7 @@ def get_sites(denovo_regions):
     print(len(rta) + len(zta) + len(vpic) + len(no_site) + len(set(two_plus_sites)), len(denovo_regions))
 
     return rta, zta, vpic, no_site
+
 
 
 mutu_denovo_regions = import_bed(mutu_denovo_bed_path)
@@ -209,25 +211,25 @@ plot_heatmap(no_site_akata_uninduced_coverage_sense, "no_site_akata_uninduced_se
 plot_heatmap(no_site_akata_induced_coverage_sense, "no_site_akata_induced_sense.denovo.CAGE.coverage", 'Reds', 8*(len(akata_no_site)/len(akata_denovo_regions)))
 
 
-plot_sumcurves(vpic_akata_uninduced_coverage_sense, "vpic_akata_uninduced_coverage_sense", 'r', max_y=.6)
-plot_sumcurves(vpic_akata_induced_coverage_sense, "vpic_akata_induced_coverage_sense", 'r', max_y=3.5)
-plot_sumcurves(vpic_akata_uninduced_coverage_antisense, "vpic_akata_uninduced_coverage_antisense","b",max_y=.6)
-plot_sumcurves(vpic_akata_induced_coverage_antisense, "vpic_akata_induced_coverage_antisense", "b",max_y=3.5)
+plot_sumcurves(vpic_akata_uninduced_coverage_sense, "vpic_akata_uninduced_coverage_sense", 'r', max_y=5)
+plot_sumcurves(vpic_akata_induced_coverage_sense, "vpic_akata_induced_coverage_sense", 'r', max_y=16)
+plot_sumcurves(vpic_akata_uninduced_coverage_antisense, "vpic_akata_uninduced_coverage_antisense","b",max_y=5)
+plot_sumcurves(vpic_akata_induced_coverage_antisense, "vpic_akata_induced_coverage_antisense", "b",max_y=16)
 
-plot_sumcurves(zta_akata_uninduced_coverage_antisense, "zta_akata_uninduced_coverage_antisense", "b",max_y=.6)
-plot_sumcurves(zta_akata_induced_coverage_antisense, "zta_akata_induced_coverage_antisense", "b",max_y=3.5)
-plot_sumcurves(zta_akata_uninduced_coverage_sense, "zta_akata_uninduced_coverage_sense", "r",max_y=.6)
-plot_sumcurves(zta_akata_induced_coverage_sense, "zta_akata_induced_coverage_sense", "r",max_y=3.5)
+plot_sumcurves(zta_akata_uninduced_coverage_antisense, "zta_akata_uninduced_coverage_antisense", "b",max_y=5)
+plot_sumcurves(zta_akata_induced_coverage_antisense, "zta_akata_induced_coverage_antisense", "b",max_y=16)
+plot_sumcurves(zta_akata_uninduced_coverage_sense, "zta_akata_uninduced_coverage_sense", "r",max_y=5)
+plot_sumcurves(zta_akata_induced_coverage_sense, "zta_akata_induced_coverage_sense", "r",max_y=16)
 
-plot_sumcurves(rta_akata_uninduced_coverage_antisense,"rta_akata_uninduced_coverage_antisense", "b",max_y=.6)
-plot_sumcurves(rta_akata_induced_coverage_antisense, 'rta_akata_induced_coverage_antisense', 'b',max_y=3.5)
-plot_sumcurves(rta_akata_uninduced_coverage_sense, 'rta_akata_uninduced_coverage_sense', 'r',max_y=.6)
-plot_sumcurves(rta_akata_induced_coverage_sense, 'rta_akata_induced_coverage_sense', 'r',max_y=3.5)
+plot_sumcurves(rta_akata_uninduced_coverage_antisense,"rta_akata_uninduced_coverage_antisense", "b",max_y=5)
+plot_sumcurves(rta_akata_induced_coverage_antisense, 'rta_akata_induced_coverage_antisense', 'b',max_y=16)
+plot_sumcurves(rta_akata_uninduced_coverage_sense, 'rta_akata_uninduced_coverage_sense', 'r',max_y=5)
+plot_sumcurves(rta_akata_induced_coverage_sense, 'rta_akata_induced_coverage_sense', 'r',max_y=16)
 
-plot_sumcurves(no_site_akata_uninduced_coverage_antisense, "no_site_akata_uninduced_coverage_antisense", "b",max_y=.6)
-plot_sumcurves(no_site_akata_induced_coverage_antisense, "no_site_akata_induced_coverage_antisense", "b",max_y=3.5)
-plot_sumcurves(no_site_akata_uninduced_coverage_sense, "no_site_akata_uninduced_coverage_sense", "r",max_y=.6)
-plot_sumcurves(no_site_akata_induced_coverage_sense, "no_site_akata_induced_coverage_sense", "r",max_y=3.5)
+plot_sumcurves(no_site_akata_uninduced_coverage_antisense, "no_site_akata_uninduced_coverage_antisense", "b",max_y=5)
+plot_sumcurves(no_site_akata_induced_coverage_antisense, "no_site_akata_induced_coverage_antisense", "b",max_y=16)
+plot_sumcurves(no_site_akata_uninduced_coverage_sense, "no_site_akata_uninduced_coverage_sense", "r",max_y=5)
+plot_sumcurves(no_site_akata_induced_coverage_sense, "no_site_akata_induced_coverage_sense", "r",max_y=16)
 
 
 #####  MUTU  #####
@@ -276,25 +278,25 @@ plot_heatmap(no_site_mutu_ctl_coverage_sense, "no_site_mutu_ctl_coverage_sense",
 plot_heatmap(no_site_mutu_zta_coverage_sense, "no_site_mutu_zta_coverage_sense", "Reds",8*(len(mutu_no_site)/len(mutu_denovo_regions)))
 
 
-plot_sumcurves(vpic_mutu_ctl_coverage_sense, "vpic_mutu_ctl_coverage_sense", 'r', max_y=.6,cutoff_number=.11)
-plot_sumcurves(vpic_mutu_zta_coverage_sense, "vpic_mutu_zta_coverage_sense", 'r', max_y=3.5,cutoff_number=.11)
-plot_sumcurves(vpic_mutu_ctl_coverage_antisense, "vpic_mutu_ctl_coverage_antisense","b",max_y=.6,cutoff_number=.11)
-plot_sumcurves(vpic_mutu_zta_coverage_antisense, "vpic_mutu_zta_coverage_antisense", "b",max_y=3.5,cutoff_number=.11)
+plot_sumcurves(vpic_mutu_ctl_coverage_sense, "vpic_mutu_ctl_coverage_sense", 'r', max_y=3,cutoff_number=0)
+plot_sumcurves(vpic_mutu_zta_coverage_sense, "vpic_mutu_zta_coverage_sense", 'r', max_y=7,cutoff_number=0)
+plot_sumcurves(vpic_mutu_ctl_coverage_antisense, "vpic_mutu_ctl_coverage_antisense","b",max_y=3,cutoff_number=0)
+plot_sumcurves(vpic_mutu_zta_coverage_antisense, "vpic_mutu_zta_coverage_antisense", "b",max_y=7,cutoff_number=0)
 
-plot_sumcurves(zta_mutu_ctl_coverage_antisense, "zta_mutu_ctl_coverage_antisense", "b",max_y=.6,cutoff_number=.11)
-plot_sumcurves(zta_mutu_zta_coverage_antisense, "zta_mutu_zta_coverage_antisense", "b",max_y=3.5,cutoff_number=.11)
-plot_sumcurves(zta_mutu_ctl_coverage_sense, "zta_mutu_ctl_coverage_sense", "r",max_y=.6,cutoff_number=.11)
-plot_sumcurves(zta_mutu_zta_coverage_sense, "zta_mutu_zta_coverage_sense", "r",max_y=3.5,cutoff_number=.11)
+plot_sumcurves(zta_mutu_ctl_coverage_antisense, "zta_mutu_ctl_coverage_antisense", "b",max_y=3,cutoff_number=0)
+plot_sumcurves(zta_mutu_zta_coverage_antisense, "zta_mutu_zta_coverage_antisense", "b",max_y=7,cutoff_number=0)
+plot_sumcurves(zta_mutu_ctl_coverage_sense, "zta_mutu_ctl_coverage_sense", "r",max_y=3,cutoff_number=0)
+plot_sumcurves(zta_mutu_zta_coverage_sense, "zta_mutu_zta_coverage_sense", "r",max_y=7,cutoff_number=0)
 
-plot_sumcurves(rta_mutu_ctl_coverage_antisense,"rta_mutu_ctl_coverage_antisense", "b",max_y=.6,cutoff_number=.11)
-plot_sumcurves(rta_mutu_zta_coverage_antisense, 'rta_mutu_zta_coverage_antisense', 'b',max_y=3.5,cutoff_number=.11)
-plot_sumcurves(rta_mutu_ctl_coverage_sense, 'rta_mutu_ctl_coverage_sense', 'r',max_y=.6,cutoff_number=.11)
-plot_sumcurves(rta_mutu_zta_coverage_sense, 'rta_mutu_zta_coverage_sense', 'r',max_y=3.5,cutoff_number=.11)
+plot_sumcurves(rta_mutu_ctl_coverage_antisense,"rta_mutu_ctl_coverage_antisense", "b",max_y=3,cutoff_number=0)
+plot_sumcurves(rta_mutu_zta_coverage_antisense, 'rta_mutu_zta_coverage_antisense', 'b',max_y=7,cutoff_number=0)
+plot_sumcurves(rta_mutu_ctl_coverage_sense, 'rta_mutu_ctl_coverage_sense', 'r',max_y=3,cutoff_number=0)
+plot_sumcurves(rta_mutu_zta_coverage_sense, 'rta_mutu_zta_coverage_sense', 'r',max_y=7,cutoff_number=0)
 
-plot_sumcurves(no_site_mutu_ctl_coverage_antisense, "no_site_mutu_ctl_coverage_antisense", "b",max_y=.6,cutoff_number=.11)
-plot_sumcurves(no_site_mutu_zta_coverage_antisense, "no_site_mutu_zta_coverage_antisense", "b",max_y=3.5,cutoff_number=.11)
-plot_sumcurves(no_site_mutu_ctl_coverage_sense, "no_site_mutu_ctl_coverage_sense", "r",max_y=.6,cutoff_number=.11)
-plot_sumcurves(no_site_mutu_zta_coverage_sense, "no_site_mutu_zta_coverage_sense", "r",max_y=3.5,cutoff_number=.11)
+plot_sumcurves(no_site_mutu_ctl_coverage_antisense, "no_site_mutu_ctl_coverage_antisense", "b",max_y=3,cutoff_number=0)
+plot_sumcurves(no_site_mutu_zta_coverage_antisense, "no_site_mutu_zta_coverage_antisense", "b",max_y=7,cutoff_number=0)
+plot_sumcurves(no_site_mutu_ctl_coverage_sense, "no_site_mutu_ctl_coverage_sense", "r",max_y=3,cutoff_number=0)
+plot_sumcurves(no_site_mutu_zta_coverage_sense, "no_site_mutu_zta_coverage_sense", "r",max_y=7,cutoff_number=0)
 
 
 
@@ -361,25 +363,25 @@ plot_heatmap(shifted_no_site_mutu_ctl_coverage_sense, "shifted_no_site_mutu_ctl_
 plot_heatmap(shifted_no_site_mutu_zta_coverage_sense, "shifted_no_site_mutu_zta_coverage_sense", "Reds",8*(len(mutu_no_site_shifted)/len(mutu_denovo_shifted)))
 
 
-plot_sumcurves(shifted_vpic_mutu_ctl_coverage_sense, "shifted_vpic_mutu_ctl_coverage_sense", 'r', max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_vpic_mutu_zta_coverage_sense, "shifted_vpic_mutu_zta_coverage_sense", 'r', max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_vpic_mutu_ctl_coverage_antisense, "shifted_vpic_mutu_ctl_coverage_antisense","b",max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_vpic_mutu_zta_coverage_antisense, "shifted_vpic_mutu_zta_coverage_antisense", "b",max_y=.6,cutoff_number=.11)
+plot_sumcurves(shifted_vpic_mutu_ctl_coverage_sense, "shifted_vpic_mutu_ctl_coverage_sense", 'r', max_y=3,cutoff_number=0)
+plot_sumcurves(shifted_vpic_mutu_zta_coverage_sense, "shifted_vpic_mutu_zta_coverage_sense", 'r', max_y=7,cutoff_number=0)
+plot_sumcurves(shifted_vpic_mutu_ctl_coverage_antisense, "shifted_vpic_mutu_ctl_coverage_antisense","b",max_y=3,cutoff_number=0)
+plot_sumcurves(shifted_vpic_mutu_zta_coverage_antisense, "shifted_vpic_mutu_zta_coverage_antisense", "b",max_y=7,cutoff_number=0)
 
-plot_sumcurves(shifted_zta_mutu_ctl_coverage_antisense, "shifted_zta_mutu_ctl_coverage_antisense", "b",max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_zta_mutu_zta_coverage_antisense, "shifted_zta_mutu_zta_coverage_antisense", "b",max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_zta_mutu_ctl_coverage_sense, "shifted_zta_mutu_ctl_coverage_sense", "r",max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_zta_mutu_zta_coverage_sense, "shifted_zta_mutu_zta_coverage_sense", "r",max_y=.6,cutoff_number=.11)
+plot_sumcurves(shifted_zta_mutu_ctl_coverage_antisense, "shifted_zta_mutu_ctl_coverage_antisense", "b",max_y=3,cutoff_number=0)
+plot_sumcurves(shifted_zta_mutu_zta_coverage_antisense, "shifted_zta_mutu_zta_coverage_antisense", "b",max_y=7,cutoff_number=0)
+plot_sumcurves(shifted_zta_mutu_ctl_coverage_sense, "shifted_zta_mutu_ctl_coverage_sense", "r",max_y=3,cutoff_number=0)
+plot_sumcurves(shifted_zta_mutu_zta_coverage_sense, "shifted_zta_mutu_zta_coverage_sense", "r",max_y=7,cutoff_number=0)
 
-plot_sumcurves(shifted_rta_mutu_ctl_coverage_antisense,"shifted_rta_mutu_ctl_coverage_antisense", "b",max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_rta_mutu_zta_coverage_antisense, 'shifted_rta_mutu_zta_coverage_antisense', 'b',max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_rta_mutu_ctl_coverage_sense, 'shifted_rta_mutu_ctl_coverage_sense', 'r',max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_rta_mutu_zta_coverage_sense, 'shifted_rta_mutu_zta_coverage_sense', 'r',max_y=.6,cutoff_number=.11)
+plot_sumcurves(shifted_rta_mutu_ctl_coverage_antisense,"shifted_rta_mutu_ctl_coverage_antisense", "b",max_y=3,cutoff_number=0)
+plot_sumcurves(shifted_rta_mutu_zta_coverage_antisense, 'shifted_rta_mutu_zta_coverage_antisense', 'b',max_y=7,cutoff_number=0)
+plot_sumcurves(shifted_rta_mutu_ctl_coverage_sense, 'shifted_rta_mutu_ctl_coverage_sense', 'r',max_y=3,cutoff_number=0)
+plot_sumcurves(shifted_rta_mutu_zta_coverage_sense, 'shifted_rta_mutu_zta_coverage_sense', 'r',max_y=7,cutoff_number=0)
 
-plot_sumcurves(shifted_no_site_mutu_ctl_coverage_antisense, "shifted_no_site_mutu_ctl_coverage_antisense", "b",max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_no_site_mutu_zta_coverage_antisense, "shifted_no_site_mutu_zta_coverage_antisense", "b",max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_no_site_mutu_ctl_coverage_sense, "shifted_no_site_mutu_ctl_coverage_sense", "r",max_y=.6,cutoff_number=.11)
-plot_sumcurves(shifted_no_site_mutu_zta_coverage_sense, "shifted_no_site_mutu_zta_coverage_sense", "r",max_y=.6,cutoff_number=.11)
+plot_sumcurves(shifted_no_site_mutu_ctl_coverage_antisense, "shifted_no_site_mutu_ctl_coverage_antisense", "b",max_y=3,cutoff_number=0)
+plot_sumcurves(shifted_no_site_mutu_zta_coverage_antisense, "shifted_no_site_mutu_zta_coverage_antisense", "b",max_y=7,cutoff_number=0)
+plot_sumcurves(shifted_no_site_mutu_ctl_coverage_sense, "shifted_no_site_mutu_ctl_coverage_sense", "r",max_y=3,cutoff_number=0)
+plot_sumcurves(shifted_no_site_mutu_zta_coverage_sense, "shifted_no_site_mutu_zta_coverage_sense", "r",max_y=7,cutoff_number=0)
 
 
 
@@ -426,25 +428,25 @@ plot_heatmap(shifted_no_site_akata_induced_coverage_antisense, "shifted_no_site_
 plot_heatmap(shifted_no_site_akata_uninduced_coverage_sense, "shifted_no_site_akata_uninduced_sense.denovo.CAGE.coverage", 'Reds', 8*(len(akata_no_site_shifted)/len(akata_denovo_shifted)))
 plot_heatmap(shifted_no_site_akata_induced_coverage_sense, "shifted_no_site_akata_induced_sense.denovo.CAGE.coverage", 'Reds', 8*(len(akata_no_site_shifted)/len(akata_denovo_shifted)))
 
-plot_sumcurves(shifted_vpic_akata_uninduced_coverage_sense, "shifted_vpic_akata_uninduced_coverage_sense", 'r', max_y=.6)
-plot_sumcurves(shifted_vpic_akata_induced_coverage_sense, "shifted_vpic_akata_induced_coverage_sense", 'r', max_y=3.5)
-plot_sumcurves(shifted_vpic_akata_uninduced_coverage_antisense, "shifted_vpic_akata_uninduced_coverage_antisense","b",max_y=.6)
-plot_sumcurves(shifted_vpic_akata_induced_coverage_antisense, "shifted_vpic_akata_induced_coverage_antisense", "b",max_y=3.5)
+plot_sumcurves(shifted_vpic_akata_uninduced_coverage_sense, "shifted_vpic_akata_uninduced_coverage_sense", 'r', max_y=5)
+plot_sumcurves(shifted_vpic_akata_induced_coverage_sense, "shifted_vpic_akata_induced_coverage_sense", 'r', max_y=16)
+plot_sumcurves(shifted_vpic_akata_uninduced_coverage_antisense, "shifted_vpic_akata_uninduced_coverage_antisense","b",max_y=5)
+plot_sumcurves(shifted_vpic_akata_induced_coverage_antisense, "shifted_vpic_akata_induced_coverage_antisense", "b",max_y=16)
 
-plot_sumcurves(shifted_zta_akata_uninduced_coverage_antisense, "shifted_zta_akata_uninduced_coverage_antisense", "b",max_y=.6)
-plot_sumcurves(shifted_zta_akata_induced_coverage_antisense, "shifted_zta_akata_induced_coverage_antisense", "b",max_y=3.5)
-plot_sumcurves(shifted_zta_akata_uninduced_coverage_sense, "shifted_zta_akata_uninduced_coverage_sense", "r",max_y=.6)
-plot_sumcurves(shifted_zta_akata_induced_coverage_sense, "shifted_zta_akata_induced_coverage_sense", "r",max_y=3.5)
+plot_sumcurves(shifted_zta_akata_uninduced_coverage_antisense, "shifted_zta_akata_uninduced_coverage_antisense", "b",max_y=5)
+plot_sumcurves(shifted_zta_akata_induced_coverage_antisense, "shifted_zta_akata_induced_coverage_antisense", "b",max_y=16)
+plot_sumcurves(shifted_zta_akata_uninduced_coverage_sense, "shifted_zta_akata_uninduced_coverage_sense", "r",max_y=5)
+plot_sumcurves(shifted_zta_akata_induced_coverage_sense, "shifted_zta_akata_induced_coverage_sense", "r",max_y=16)
 
-plot_sumcurves(shifted_rta_akata_uninduced_coverage_antisense,"shifted_rta_akata_uninduced_coverage_antisense", "b",max_y=.6)
-plot_sumcurves(shifted_rta_akata_induced_coverage_antisense, 'shifted_rta_akata_induced_coverage_antisense', 'b',max_y=3.5)
-plot_sumcurves(shifted_rta_akata_uninduced_coverage_sense, 'shifted_rta_akata_uninduced_coverage_sense', 'r',max_y=.6)
-plot_sumcurves(shifted_rta_akata_induced_coverage_sense, 'shifted_rta_akata_induced_coverage_sense', 'r',max_y=3.5)
+plot_sumcurves(shifted_rta_akata_uninduced_coverage_antisense,"shifted_rta_akata_uninduced_coverage_antisense", "b",max_y=5)
+plot_sumcurves(shifted_rta_akata_induced_coverage_antisense, 'shifted_rta_akata_induced_coverage_antisense', 'b',max_y=16)
+plot_sumcurves(shifted_rta_akata_uninduced_coverage_sense, 'shifted_rta_akata_uninduced_coverage_sense', 'r',max_y=5)
+plot_sumcurves(shifted_rta_akata_induced_coverage_sense, 'shifted_rta_akata_induced_coverage_sense', 'r',max_y=16)
 
-plot_sumcurves(shifted_no_site_akata_uninduced_coverage_antisense, "shifted_no_site_akata_uninduced_coverage_antisense", "b",max_y=.6)
-plot_sumcurves(shifted_no_site_akata_induced_coverage_antisense, "shifted_no_site_akata_induced_coverage_antisense", "b",max_y=3.5)
-plot_sumcurves(shifted_no_site_akata_uninduced_coverage_sense, "shifted_no_site_akata_uninduced_coverage_sense", "r",max_y=.6)
-plot_sumcurves(shifted_no_site_akata_induced_coverage_sense, "shifted_no_site_akata_induced_coverage_sense", "r",max_y=3.5)
+plot_sumcurves(shifted_no_site_akata_uninduced_coverage_antisense, "shifted_no_site_akata_uninduced_coverage_antisense", "b",max_y=5)
+plot_sumcurves(shifted_no_site_akata_induced_coverage_antisense, "shifted_no_site_akata_induced_coverage_antisense", "b",max_y=16)
+plot_sumcurves(shifted_no_site_akata_uninduced_coverage_sense, "shifted_no_site_akata_uninduced_coverage_sense", "r",max_y=5)
+plot_sumcurves(shifted_no_site_akata_induced_coverage_sense, "shifted_no_site_akata_induced_coverage_sense", "r",max_y=16)
 
 
 
@@ -474,3 +476,17 @@ plot_heatmap(canonical_akata_uninduced_coverage_sense, "canonical_akata_uninduce
 plot_heatmap(canonical_akata_uninduced_coverage_antisense, "canonical_akata_uninduced_coverage_antisense.denovo.CAGE.coverage", 'Blues', 10)
 plot_heatmap(canonical_akata_induced_coverage_sense, "canonical_akata_induced_coverage_sense.denovo.CAGE.coverage", 'Reds', 10)
 plot_heatmap(canonical_akata_induced_coverage_antisense, "canonical_akata_induced_coverage_antisense.denovo.CAGE.coverage", 'Blues', 10)
+
+
+
+plot_sumcurves(canonical_mutu_ctl_coverage_sense, "canonical_mutu_ctl_coverage_sense.denovo.CAGE.coverage", 'r', max_y=4)
+plot_sumcurves(canonical_mutu_ctl_coverage_antisense, "canonical_mutu_ctl_coverage_antisense.denovo.CAGE.coverage", 'b', max_y=4)
+plot_sumcurves(canonical_mutu_zta_coverage_sense, "canonical_mutu_zta_coverage_sense.denovo.CAGE.coverage", 'r', max_y=4)
+plot_sumcurves(canonical_mutu_zta_coverage_antisense, "canonical_mutu_zta_coverage_antisense.denovo.CAGE.coverage", 'b', max_y=4)
+
+
+plot_sumcurves(canonical_akata_uninduced_coverage_sense, "canonical_akata_uninduced_coverage_sense.denovo.CAGE.coverage", 'r', max_y=4)
+plot_sumcurves(canonical_akata_uninduced_coverage_antisense, "canonical_akata_uninduced_coverage_antisense.denovo.CAGE.coverage", 'b', max_y=4)
+plot_sumcurves(canonical_akata_induced_coverage_sense, "canonical_akata_induced_coverage_sense.denovo.CAGE.coverage", 'r', max_y=4)
+plot_sumcurves(canonical_akata_induced_coverage_antisense, "canonical_akata_induced_coverage_antisense.denovo.CAGE.coverage", 'b', max_y=4)
+
